@@ -13,6 +13,7 @@
         <li>
             <p>
                 Download a two-factor authenticator app like Microsoft Authenticator for
+                <a href="https://go.microsoft.com/fwlink/?Linkid=825071">Windows Phone</a>,
                 <a href="https://go.microsoft.com/fwlink/?Linkid=825072">Android</a> and
                 <a href="https://go.microsoft.com/fwlink/?Linkid=825073">iOS</a> or
                 Google Authenticator for
@@ -50,4 +51,14 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+
+    <script type="text/javascript" src="~/js/qrcode.js"></script>
+    <script type="text/javascript">
+        new QRCode(document.getElementById("qrCode"),
+            {
+                text: "@Html.Raw(Model.AuthenticatorUri)",
+                width: 150,
+                height: 150
+            });
+    </script>
 }

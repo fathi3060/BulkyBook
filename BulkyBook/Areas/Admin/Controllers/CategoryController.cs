@@ -26,7 +26,7 @@ namespace BulkyBook.Areas.Admin.Controllers
             return View();
         }
 
-        public IActionResult Upsert(int? id)
+        public async Task<IActionResult> Upsert(int? id)
         {
             Category category = new Category();
 
@@ -36,7 +36,7 @@ namespace BulkyBook.Areas.Admin.Controllers
                 return View(category);
             }
             //edit
-            category = _UnitOfWork.Category.Get(id.GetValueOrDefault());
+            category = await _UnitOfWork.Category.GetAsync(id.GetValueOrDefault());
             if(category == null)
             {
                 return NotFound();
@@ -46,13 +46,13 @@ namespace BulkyBook.Areas.Admin.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Upsert(Category category)
+        public async Task<IActionResult> Upsert(Category category)
         {
             if(ModelState.IsValid)
             {
                 if(category.Id == 0)
                 {
-                    _UnitOfWork.Category.Add(category);
+                    await _UnitOfWork.Category.AddAsync(category);
                 }
                 else
                 {
@@ -66,21 +66,21 @@ namespace BulkyBook.Areas.Admin.Controllers
 
         #region API CALLS
         [HttpGet]
-        public IActionResult GetAll()
+        public async Task<IActionResult> GetAll()
         {
-            var allObj = _UnitOfWork.Category.GetAll();
+            var allObj = await _UnitOfWork.Category.GetAllAsync();
             return Json(new { data = allObj });
         }
 
         [HttpDelete]
-        public IActionResult Delete(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            var objFormDb = _UnitOfWork.Category.Get(id);
+            var objFormDb = await _UnitOfWork.Category.GetAsync(id);
             if(objFormDb == null)
             {
                 return Json(new { success = false, message = "Error while deleting" });
             }
-            _UnitOfWork.Category.Remove(objFormDb);
+            await _UnitOfWork.Category.RemoveAsync(objFormDb);
             _UnitOfWork.Save();
 
             return Json(new { success = true, message = "Delete Successful" });
