@@ -15,75 +15,100 @@ namespace BulkyBook.Areas.Admin.Controllers
     [Authorize(Roles = SD.Role_Admin)]
     public class CategoryController : Controller
     {
-        private readonly IUnitOfWork _UnitOfWork;
+        private readonly IUnitOfWork _unitOfWork;
 
         public CategoryController(IUnitOfWork unitOfWork)
         {
-            _UnitOfWork = unitOfWork;
+            _unitOfWork = unitOfWork;
         }
-        public IActionResult Index()
+
+        public async Task<IActionResult> Index(int productPage = 1)
         {
-            return View();
+            CategoryVM categoryVM = new CategoryVM()
+            {
+                Categories = await _unitOfWork.Category.GetAllAsync()
+            };
+
+            var count = categoryVM.Categories.Count();
+            categoryVM.Categories = categoryVM.Categories.OrderBy(p => p.Name)
+                .Skip((productPage - 1) * 2).Take(2).ToList();
+
+            categoryVM.PagingInfo = new PagingInfo
+            {
+                CurrentPage = productPage,
+                ItemsPerPage = 2,
+                TotalItem = count,
+                urlParam = "/Admin/Category/Index?productPage=:"
+            };
+
+            return View(categoryVM);
         }
 
         public async Task<IActionResult> Upsert(int? id)
         {
             Category category = new Category();
-
-            if (id==null)
+            if (id == null)
             {
-                //create
+                //this is for create
                 return View(category);
             }
-            //edit
-            category = await _UnitOfWork.Category.GetAsync(id.GetValueOrDefault());
-            if(category == null)
+            //this is for edit
+            category = await _unitOfWork.Category.GetAsync(id.GetValueOrDefault());
+            if (category == null)
             {
                 return NotFound();
             }
             return View(category);
+
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Upsert(Category category)
         {
-            if(ModelState.IsValid)
+            if (ModelState.IsValid)
             {
-                if(category.Id == 0)
+                if (category.Id == 0)
                 {
-                    await _UnitOfWork.Category.AddAsync(category);
+                    await _unitOfWork.Category.AddAsync(category);
+
                 }
                 else
                 {
-                    _UnitOfWork.Category.Update(category);
+                    _unitOfWork.Category.Update(category);
                 }
-                _UnitOfWork.Save();
+                _unitOfWork.Save();
                 return RedirectToAction(nameof(Index));
             }
             return View(category);
         }
 
+
         #region API CALLS
+
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            var allObj = await _UnitOfWork.Category.GetAllAsync();
+            var allObj = await _unitOfWork.Category.GetAllAsync();
             return Json(new { data = allObj });
         }
 
         [HttpDelete]
         public async Task<IActionResult> Delete(int id)
         {
-            var objFormDb = await _UnitOfWork.Category.GetAsync(id);
-            if(objFormDb == null)
+            var objFromDb = await _unitOfWork.Category.GetAsync(id);
+            if (objFromDb == null)
             {
+                TempData["Error"] = "Error deleting Category";
                 return Json(new { success = false, message = "Error while deleting" });
             }
-            await _UnitOfWork.Category.RemoveAsync(objFormDb);
-            _UnitOfWork.Save();
 
+            await _unitOfWork.Category.RemoveAsync(objFromDb);
+            _unitOfWork.Save();
+
+            TempData["Success"] = "Category successfully deleted";
             return Json(new { success = true, message = "Delete Successful" });
+
         }
 
         #endregion
